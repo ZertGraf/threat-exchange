@@ -1,0 +1,8 @@
+{
+  "md5": "d41d8cd98f00b204e9800998ecf8427e",
+  "name": "Trojan.Win32.Generic",
+  "description": "Example threat intelligence record; no malware sample is stored.",
+  "severity": "high",
+  "type": "trojan",
+  "tags": ["windows", "banking"]
+}

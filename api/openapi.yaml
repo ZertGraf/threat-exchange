@@ -1,0 +1,316 @@
+openapi: 3.0.3
+info:
+  title: Information Exchange Service
+  version: 1.0.0
+  description: >-
+    A persistent threat registry. Hashes are case-insensitive and returned in
+    lowercase. PUT replaces every writable field; omitted optional fields reset
+    to their defaults. API keys are optional when neither API_KEY nor API_KEY_FILE
+    is configured. The published specification reflects the active authentication.
+security:
+  - ApiKey: []
+  - {}
+paths:
+  /info:
+    post:
+      operationId: createThreat
+      summary: Create a threat with a unique MD5
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThreatCreateRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Relative URL of the new record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreatResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '408':
+          $ref: '#/components/responses/RequestTimeout'
+        '409':
+          description: MD5 already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          $ref: '#/components/responses/TooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /info/{md5}:
+    parameters:
+      - $ref: '#/components/parameters/Md5'
+    get:
+      operationId: getInfoByMd5
+      summary: Get the complete threat record by MD5
+      responses:
+        '200':
+          description: Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreatResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '408':
+          $ref: '#/components/responses/RequestTimeout'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+    put:
+      operationId: updateThreat
+      summary: Replace an existing threat while preserving MD5 and created_at
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThreatUpdateRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreatResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '408':
+          $ref: '#/components/responses/RequestTimeout'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/TooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  parameters:
+    Md5:
+      name: md5
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Md5'
+  responses:
+    BadRequest:
+      description: Invalid hash, JSON body, or field value
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Missing or incorrect API key when authentication is enabled
+      headers:
+        WWW-Authenticate:
+          description: API-key authentication challenge
+          schema:
+            type: string
+            example: ApiKey realm="threat-exchange"
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: No threat with this MD5
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    MethodNotAllowed:
+      description: The resource exists but does not support the requested method
+      headers:
+        Allow:
+          description: Comma-separated supported methods for this resource
+          schema:
+            type: string
+            example: GET, PUT
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RequestTimeout:
+      description: The request was canceled or the body read deadline expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unavailable:
+      description: The database operation exceeded its processing deadline
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooLarge:
+      description: Request body exceeds 65536 bytes
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnsupportedMediaType:
+      description: A JSON request requires Content-Type application/json
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimited:
+      description: The process-wide token bucket is exhausted
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal failure; database and credential details are not exposed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    Md5:
+      type: string
+      pattern: '^[a-fA-F0-9]{32}$'
+      example: d41d8cd98f00b204e9800998ecf8427e
+    Severity:
+      type: string
+      enum: [unknown, low, medium, high, critical]
+      default: unknown
+    ThreatType:
+      type: string
+      enum: [unknown, virus, worm, trojan, ransomware, spyware, adware, rootkit, other]
+      default: unknown
+    Name:
+      type: string
+      minLength: 1
+      maxLength: 255
+      pattern: '^[^\x00]*$'
+      description: Threat name; must not be blank; surrounding whitespace is trimmed before storage
+      example: Trojan.Win32.Generic
+    Description:
+      type: string
+      maxLength: 4096
+      pattern: '^[^\x00]*$'
+      default: ''
+      description: Human-readable analysis
+    Tags:
+      type: array
+      maxItems: 20
+      uniqueItems: true
+      default: []
+      items:
+        type: string
+        minLength: 1
+        maxLength: 32
+        pattern: '^[a-z0-9][a-z0-9._-]{0,31}$'
+      description: Unique lowercase classification labels
+    ThreatCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [md5, name]
+      properties:
+        md5:
+          $ref: '#/components/schemas/Md5'
+        name:
+          $ref: '#/components/schemas/Name'
+        description:
+          $ref: '#/components/schemas/Description'
+        severity:
+          $ref: '#/components/schemas/Severity'
+        type:
+          $ref: '#/components/schemas/ThreatType'
+        tags:
+          $ref: '#/components/schemas/Tags'
+    ThreatUpdateRequest:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          $ref: '#/components/schemas/Name'
+        description:
+          $ref: '#/components/schemas/Description'
+        severity:
+          $ref: '#/components/schemas/Severity'
+        type:
+          $ref: '#/components/schemas/ThreatType'
+        tags:
+          $ref: '#/components/schemas/Tags'
+    ThreatResponse:
+      type: object
+      additionalProperties: false
+      required: [md5, name, description, severity, type, tags, created_at, updated_at]
+      properties:
+        md5:
+          $ref: '#/components/schemas/Md5'
+        name:
+          $ref: '#/components/schemas/Name'
+        description:
+          $ref: '#/components/schemas/Description'
+        severity:
+          $ref: '#/components/schemas/Severity'
+        type:
+          $ref: '#/components/schemas/ThreatType'
+        tags:
+          $ref: '#/components/schemas/Tags'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [message]
+      properties:
+        message:
+          type: string
+        details:
+          type: string

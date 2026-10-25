@@ -1,0 +1,12 @@
+.git
+.env
+certs
+secrets
+bin
+coverage.*
+*.exe
+*.md
+compose*.yaml
+examples
+.env.example
+Dockerfile

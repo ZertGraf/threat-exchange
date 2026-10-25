@@ -1,0 +1,30 @@
+name: threat-exchange-tests
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: threats_test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U test -d threats_test']
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  tests:
+    build:
+      context: .
+      target: development
+    environment:
+      TEST_DATABASE_URL: postgres://test:test@db:5432/threats_test?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+    # -count=1 disables only result caching; the volume keeps race-instrumented builds.
+    volumes:
+      - go-build:/root/.cache/go-build
+    command: [go, test, -race, -count=1, '-coverpkg=./internal/...', -coverprofile=/tmp/coverage.out, ./...]
+volumes:
+  go-build:

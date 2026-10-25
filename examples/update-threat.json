@@ -1,0 +1,7 @@
+{
+  "name": "Trojan.Win32.Updated",
+  "description": "Updated analysis.",
+  "severity": "critical",
+  "type": "trojan",
+  "tags": ["windows", "banking", "reviewed"]
+}

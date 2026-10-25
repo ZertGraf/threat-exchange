@@ -1,0 +1,7 @@
+services:
+  api:
+    environment:
+      TLS_CERT_FILE: /certs/server.crt
+      TLS_KEY_FILE: /certs/server.key
+    volumes:
+      - ./certs:/certs:ro

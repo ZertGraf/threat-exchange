@@ -1,0 +1,7 @@
+.env
+certs/
+secrets/
+bin/
+coverage.out
+coverage.html
+*.exe

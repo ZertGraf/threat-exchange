@@ -1,0 +1,11 @@
+package: api
+output: api.gen.go
+generate:
+  models: true
+  std-http-server: true
+  embedded-spec: true
+output-options:
+  skip-prune: true
+compatibility:
+  # publish operationId values exactly as written in openapi.yaml.
+  preserve-original-operation-id-casing-in-embedded-spec: true
